@@ -1,0 +1,270 @@
+
+import React, { useState } from 'react';
+import { HealthcareRecord, ComparisonResult, FeatureSelectionResult } from '../types';
+import { runModelComparison, runFeatureSelection } from '../services/geminiService';
+import { Play, CheckCircle, BrainCircuit, Activity, Cpu, ScanSearch, BarChart as IconBarChart, ChevronRight } from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
+
+interface ModelLabProps {
+  data: HealthcareRecord[];
+}
+
+const ModelLab: React.FC<ModelLabProps> = ({ data }) => {
+  const [loading, setLoading] = useState(false);
+  const [analyzingFeatures, setAnalyzingFeatures] = useState(false);
+  const [result, setResult] = useState<ComparisonResult | null>(null);
+  const [featureResult, setFeatureResult] = useState<FeatureSelectionResult | null>(null);
+
+  const getSummary = () => `
+      Total Records: ${data.length}
+      Target: RiskCategory (High/Low)
+      Features: 30 (Age, BMI, Income, History, SystolicBP, etc.)
+      Sample Row: ${JSON.stringify(data[0])}
+    `;
+
+  const handleRunComparison = async () => {
+    if (data.length === 0) return;
+    setLoading(true);
+    try {
+      const comparison = await runModelComparison(getSummary());
+      setResult(comparison);
+    } catch (e) {
+      alert("Failed to run analysis. Check API Key.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFeatureAnalysis = async () => {
+    if (data.length === 0) return;
+    setAnalyzingFeatures(true);
+    try {
+        const features = await runFeatureSelection(getSummary());
+        setFeatureResult(features);
+    } catch (e) {
+        alert("Failed to run feature analysis.");
+    } finally {
+        setAnalyzingFeatures(false);
+    }
+  }
+
+  return (
+    <div className="space-y-8 animate-fade-in pb-10">
+       {/* Hero / Action Section */}
+      <div className="bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 text-white p-10 rounded-2xl shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-8 opacity-10 animate-pulse">
+          <BrainCircuit size={200} />
+        </div>
+        <div className="relative z-10 max-w-4xl">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-white/10 rounded-lg backdrop-blur">
+               <Cpu className="text-blue-300" />
+            </div>
+            <h2 className="text-3xl font-bold">AutoML & Feature Lab</h2>
+          </div>
+          <p className="text-blue-100 mb-8 text-lg leading-relaxed max-w-2xl">
+            Leverage Google Gemini to benchmark <strong>8 state-of-the-art algorithms</strong> including Keras Deep Learning, 
+            or identify the most predictive features in your dataset.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                onClick={handleRunComparison}
+                disabled={loading || data.length === 0}
+                className={`
+                  flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-bold text-base transition-all shadow-lg
+                  ${loading 
+                    ? 'bg-slate-800 cursor-wait text-slate-400' 
+                    : 'bg-blue-600 hover:bg-blue-500 hover:shadow-blue-900/50 hover:scale-[1.02] active:scale-[0.98]'}
+                `}
+              >
+                 {loading ? (
+                   <>
+                    <Activity className="animate-spin" size={20}/>
+                    Benchmarking Models...
+                   </>
+                 ) : (
+                   <>
+                    <Play fill="currentColor" size={20}/>
+                    Run Model Benchmark
+                   </>
+                 )}
+              </button>
+
+              <button
+                onClick={handleFeatureAnalysis}
+                disabled={analyzingFeatures || data.length === 0}
+                className={`
+                  flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-bold text-base transition-all shadow-lg border-2
+                  ${analyzingFeatures 
+                    ? 'border-slate-700 bg-slate-800 cursor-wait text-slate-400' 
+                    : 'border-indigo-400 text-indigo-100 hover:bg-white/10 hover:border-white hover:text-white'}
+                `}
+              >
+                 {analyzingFeatures ? (
+                   <>
+                    <ScanSearch className="animate-spin" size={20}/>
+                    Scanning Features...
+                   </>
+                 ) : (
+                   <>
+                    <IconBarChart size={20}/>
+                    Run Feature Selection
+                   </>
+                 )}
+              </button>
+          </div>
+          
+          {data.length === 0 && (
+             <div className="mt-6 flex items-center gap-2 text-red-300 bg-red-900/30 px-4 py-2 rounded-lg w-fit text-sm">
+                <Activity size={16} /> Please load or generate a dataset first.
+             </div>
+          )}
+        </div>
+      </div>
+
+      {/* Feature Selection Results */}
+      {featureResult && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-fade-in-up">
+            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <div>
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <ScanSearch className="text-indigo-600" size={20}/>
+                        Predictive Feature Importance
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider font-bold">Methodology: {featureResult.methodology}</p>
+                </div>
+            </div>
+            <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                            layout="vertical"
+                            data={featureResult.topFeatures}
+                            margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
+                        >
+                            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                            <XAxis type="number" domain={[0, 100]} hide />
+                            <YAxis type="category" dataKey="feature" width={100} tick={{fontSize: 12, fontWeight: 600, fill: '#475569'}} />
+                            <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                            <Bar dataKey="importance" fill="#4f46e5" radius={[0, 4, 4, 0]} barSize={16}>
+                                 {/* Optional cells */}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+                <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
+                    {featureResult.topFeatures.map((item, idx) => (
+                        <div key={idx} className="flex gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-indigo-100 transition-colors">
+                             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white border border-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shadow-sm">
+                                 {idx + 1}
+                             </div>
+                             <div>
+                                 <div className="flex items-center gap-2 mb-1">
+                                     <span className="font-bold text-slate-800">{item.feature}</span>
+                                     <div className="flex-1 h-1.5 bg-slate-200 rounded-full w-24">
+                                         <div className="h-1.5 bg-indigo-500 rounded-full" style={{width: `${item.importance}%`}}></div>
+                                     </div>
+                                 </div>
+                                 <p className="text-sm text-slate-600 leading-relaxed">{item.reason}</p>
+                             </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* Model Benchmark Results */}
+      {result && (
+        <div className="space-y-6 animate-fade-in-up">
+           {/* Insights Panel */}
+           <div className="bg-emerald-50 border border-emerald-100 p-6 rounded-xl shadow-sm flex gap-4">
+              <div className="p-3 bg-emerald-100 text-emerald-600 rounded-full h-fit">
+                 <CheckCircle size={24} />
+              </div>
+              <div>
+                 <h3 className="text-emerald-900 font-bold text-lg mb-2">
+                    Champion Model: {result.bestModel}
+                 </h3>
+                 <p className="text-emerald-800 leading-relaxed text-sm opacity-90">
+                    {result.insights}
+                 </p>
+              </div>
+           </div>
+
+           {/* Metrics Charts */}
+           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                   <Activity size={18} className="text-blue-500" /> Tuning Impact
+                </h3>
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={result.metrics}
+                      layout="vertical"
+                      margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                      <XAxis type="number" domain={[0, 1]} hide />
+                      <YAxis type="category" dataKey="name" width={110} tick={{fontSize: 11, fontWeight: 600, fill: '#64748b'}} />
+                      <Tooltip formatter={(val: number) => `${(val * 100).toFixed(1)}%`} contentStyle={{borderRadius: '8px'}} />
+                      <Legend wrapperStyle={{fontSize: '12px', paddingTop: '10px'}}/>
+                      <Bar dataKey="accuracyBefore" name="Base Model" fill="#cbd5e1" radius={[0, 4, 4, 0]} barSize={8} />
+                      <Bar dataKey="accuracyAfter" name="Tuned Model" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={8} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Detailed Metrics Table */}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                 <div className="p-6 border-b border-slate-100">
+                    <h3 className="text-lg font-bold text-slate-800">Technical Specifications</h3>
+                 </div>
+                 <div className="overflow-x-auto flex-1">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs tracking-wider border-b border-slate-200">
+                        <tr>
+                          <th className="px-6 py-4">Algorithm</th>
+                          <th className="px-6 py-4">Architecture / Params</th>
+                          <th className="px-6 py-4 text-right">F1 Score</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {result.metrics.map((m) => (
+                          <tr key={m.name} className={`hover:bg-slate-50 transition-colors ${m.name === result.bestModel ? 'bg-emerald-50/50' : ''}`}>
+                             <td className="px-6 py-4 font-bold text-slate-700 align-top w-1/3">
+                                {m.name}
+                                {m.name === result.bestModel && (
+                                   <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 uppercase tracking-wide">
+                                      Winner
+                                   </span>
+                                )}
+                             </td>
+                             <td className="px-6 py-4 align-top">
+                                <span className={`text-[10px] px-2 py-0.5 rounded border mb-2 inline-block font-mono font-semibold ${m.type === 'DL' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                                  {m.type}
+                                </span>
+                                <p className="text-xs text-slate-500 leading-relaxed">{m.details}</p>
+                             </td>
+                             <td className="px-6 py-4 font-mono text-slate-700 text-right align-top font-bold text-base">
+                                {m.f1Score.toFixed(3)}
+                             </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ModelLab;
