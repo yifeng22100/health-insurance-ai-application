@@ -1,93 +1,113 @@
-
-import React, { useState } from 'react';
-import { AppTab, HealthcareRecord } from './types';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HealthcareRecord } from './types';
+import { generateDataset } from './utils/dataGenerator';
+import Nav from './components/Nav';
+import Footer from './components/Footer';
+import Home from './pages/Home';
+import HealthTips from './pages/HealthTips';
+import About from './pages/About';
 import DatasetView from './components/DatasetView';
-import Dashboard from './components/Dashboard';
 import ModelLab from './components/ModelLab';
 import Prediction from './components/Prediction';
 import CostForecast from './components/CostForecast';
 import ReportGenerator from './components/ReportGenerator';
-import { Database, LayoutDashboard, Brain, FileOutput, DollarSign, FileText } from 'lucide-react';
+
+// Dashboard pulls in Plotly (a large charting library), so it's split into its own
+// chunk and only downloaded when the Insights page is actually visited.
+const Dashboard = lazy(() => import('./components/Dashboard'));
+
+function RouteLoading() {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="flex items-center gap-3 text-ink-secondary">
+        <span className="w-5 h-5 border-2 border-ink-quaternary border-t-brand rounded-full animate-spin" />
+        <span className="text-[13px] font-medium">Loading…</span>
+      </div>
+    </div>
+  );
+}
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<AppTab>(AppTab.DATASET);
   const [dataset, setDataset] = useState<HealthcareRecord[]>([]);
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case AppTab.DATASET:
-        return <DatasetView data={dataset} onDataUpdate={setDataset} />;
-      case AppTab.DASHBOARD:
-        return <Dashboard data={dataset} />;
-      case AppTab.MODELS:
-        return <ModelLab data={dataset} />;
-      case AppTab.PREDICTION:
-        return <Prediction />;
-      case AppTab.COST_FORECAST:
-        return <CostForecast />;
-      case AppTab.REPORT:
-        return <ReportGenerator />;
-      default:
-        return null;
+  useEffect(() => {
+    if (dataset.length === 0) {
+      const timer = setTimeout(() => setDataset(generateDataset(1000)), 50);
+      return () => clearTimeout(timer);
     }
-  };
-
-  const NavButton = ({ tab, icon: Icon, label }: { tab: AppTab; icon: any; label: string }) => (
-    <button
-      onClick={() => setActiveTab(tab)}
-      className={`
-        flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap
-        ${activeTab === tab 
-          ? 'border-blue-600 text-blue-600 bg-blue-50/50' 
-          : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}
-      `}
-    >
-      <Icon size={18} />
-      {label}
-    </button>
-  );
+  }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 print:hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-2 rounded-lg shadow-lg">
-                <Database className="text-white" size={24} />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-slate-900 tracking-tight">HealthInsure AI</h1>
-                <p className="text-xs text-slate-500 font-medium">Data Science Workbench</p>
-              </div>
-            </div>
-          </div>
-          
-          {/* Navigation */}
-          <div className="flex space-x-1 -mb-px overflow-x-auto no-scrollbar">
-            <NavButton tab={AppTab.DATASET} icon={Database} label="Dataset" />
-            <NavButton tab={AppTab.DASHBOARD} icon={LayoutDashboard} label="Visual Insights" />
-            <NavButton tab={AppTab.MODELS} icon={Brain} label="AutoML Lab" />
-            <NavButton tab={AppTab.PREDICTION} icon={FileOutput} label="Risk Classifier" />
-            <NavButton tab={AppTab.COST_FORECAST} icon={DollarSign} label="Cost Forecaster" />
-            <NavButton tab={AppTab.REPORT} icon={FileText} label="Export Report" />
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 print:p-0 print:max-w-none">
-        {renderContent()}
-      </main>
-
-      {/* Simple Footer */}
-      <footer className="bg-white border-t border-slate-200 py-6 mt-auto print:hidden">
-        <div className="max-w-7xl mx-auto px-4 text-center text-slate-400 text-sm">
-          &copy; 2024 HealthInsure AI Workbench. Powered by Gemini 2.5 Flash, Keras & TensorFlow.js Concepts.
-        </div>
-      </footer>
-    </div>
+    <HashRouter>
+      <div className="min-h-screen bg-white flex flex-col">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:bg-brand focus:text-white focus:px-4 focus:py-2 focus:rounded-xl focus:text-[13px] focus:font-semibold"
+        >
+          Skip to main content
+        </a>
+        <Nav />
+        <main id="main-content" className="flex-1 w-full">
+          <Suspense fallback={<RouteLoading />}>
+            <Routes>
+              <Route path="/" element={<Home dataCount={dataset.length} />} />
+              <Route
+                path="/dataset"
+                element={
+                  <div className="max-w-[1280px] mx-auto px-5 py-8 print:p-0 print:max-w-none">
+                    <DatasetView data={dataset} onDataUpdate={setDataset} />
+                  </div>
+                }
+              />
+              <Route
+                path="/insights"
+                element={
+                  <div className="max-w-[1280px] mx-auto px-5 py-8">
+                    <Dashboard data={dataset} />
+                  </div>
+                }
+              />
+              <Route
+                path="/automl"
+                element={
+                  <div className="max-w-[1280px] mx-auto px-5 py-8">
+                    <ModelLab data={dataset} />
+                  </div>
+                }
+              />
+              <Route
+                path="/predict"
+                element={
+                  <div className="max-w-[1280px] mx-auto px-5 py-8">
+                    <Prediction />
+                  </div>
+                }
+              />
+              <Route
+                path="/forecast"
+                element={
+                  <div className="max-w-[1280px] mx-auto px-5 py-8">
+                    <CostForecast />
+                  </div>
+                }
+              />
+              <Route
+                path="/report"
+                element={
+                  <div className="max-w-[1280px] mx-auto px-5 py-8 print:p-0 print:max-w-none">
+                    <ReportGenerator />
+                  </div>
+                }
+              />
+              <Route path="/health-tips" element={<HealthTips />} />
+              <Route path="/about" element={<About />} />
+            </Routes>
+          </Suspense>
+        </main>
+        <Footer />
+      </div>
+    </HashRouter>
   );
 };
 
