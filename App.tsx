@@ -52,22 +52,8 @@ const App: React.FC = () => {
           <Suspense fallback={<RouteLoading />}>
             <Routes>
               <Route path="/" element={<Home dataCount={dataset.length} />} />
-              <Route
-                path="/dataset"
-                element={
-                  <div className="max-w-[1280px] mx-auto px-5 py-8 print:p-0 print:max-w-none">
-                    <DatasetView data={dataset} onDataUpdate={setDataset} />
-                  </div>
-                }
-              />
-              <Route
-                path="/insights"
-                element={
-                  <div className="max-w-[1280px] mx-auto px-5 py-8">
-                    <Dashboard data={dataset} />
-                  </div>
-                }
-              />
+              <Route path="/dataset" element={<DatasetView data={dataset} onDataUpdate={setDataset} />} />
+              <Route path="/insights" element={<Dashboard data={dataset} />} />
               <Route
                 path="/automl"
                 element={
@@ -76,30 +62,9 @@ const App: React.FC = () => {
                   </div>
                 }
               />
-              <Route
-                path="/predict"
-                element={
-                  <div className="max-w-[1280px] mx-auto px-5 py-8">
-                    <Prediction />
-                  </div>
-                }
-              />
-              <Route
-                path="/forecast"
-                element={
-                  <div className="max-w-[1280px] mx-auto px-5 py-8">
-                    <CostForecast />
-                  </div>
-                }
-              />
-              <Route
-                path="/report"
-                element={
-                  <div className="max-w-[1280px] mx-auto px-5 py-8 print:p-0 print:max-w-none">
-                    <ReportGenerator />
-                  </div>
-                }
-              />
+              <Route path="/predict" element={<Prediction />} />
+              <Route path="/forecast" element={<CostForecast />} />
+              <Route path="/report" element={<ReportGenerator />} />
               <Route path="/health-tips" element={<HealthTips />} />
               <Route path="/about" element={<About />} />
             </Routes>

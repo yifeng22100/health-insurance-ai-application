@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { HealthcareRecord } from '../types';
-import { Upload, RefreshCw, Database, Search, Filter, Eye, EyeOff } from 'lucide-react';
+import { Upload, RefreshCw, Database, Search, Filter, Eye, EyeOff, Users, Activity, DollarSign, AlertTriangle } from 'lucide-react';
 import { generateDataset } from '../utils/dataGenerator';
 
 interface DatasetViewProps {
@@ -51,12 +51,34 @@ const DatasetView: React.FC<DatasetViewProps> = ({ data, onDataUpdate }) => {
   const totalPages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
   const displayedData = filteredData.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
+  const quickStats = useMemo(() => {
+    if (data.length === 0) return null;
+    const avgAge = data.reduce((a, c) => a + c.age, 0) / data.length;
+    const avgBmi = data.reduce((a, c) => a + c.bmi, 0) / data.length;
+    const avgPremium = data.reduce((a, c) => a + c.annualPremium, 0) / data.length;
+    const highRiskPct = (data.filter(d => d.riskCategory === 'High').length / data.length) * 100;
+    return { avgAge, avgBmi, avgPremium, highRiskPct };
+  }, [data]);
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="min-h-screen bg-white">
+      {/* Page header */}
+      <div className="bg-surface-secondary border-b border-ink-quaternary pt-10 pb-8 px-5 print:hidden">
+        <div className="max-w-[1280px] mx-auto">
+          <p className="text-brand text-[12px] font-semibold uppercase tracking-[0.12em] mb-1">Dataset</p>
+          <h1 className="text-[28px] font-bold text-ink tracking-tight">Generate and browse the portfolio.</h1>
+          <p className="text-ink-secondary text-[14px] mt-2 max-w-[580px]">
+            A synthetic patient population with 25+ statistical features, ready to feed every other tool in this
+            workbench.
+          </p>
+        </div>
+      </div>
+
+      <div className="max-w-[1280px] mx-auto px-5 py-8 print:p-0 print:max-w-none space-y-6 animate-fade-in">
       {/* Control Bar */}
       <div className="bg-white p-6 rounded-2xl shadow-card border border-ink-quaternary">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-          
+
           {/* Title & Description */}
           <div className="flex items-start gap-4 max-w-lg">
              <div className="p-3 bg-brand-light text-brand rounded-xl mt-1">
@@ -69,22 +91,22 @@ const DatasetView: React.FC<DatasetViewProps> = ({ data, onDataUpdate }) => {
                </p>
              </div>
           </div>
-          
+
           {/* Controls */}
           <div className="flex flex-col sm:flex-row items-center gap-6 w-full lg:w-auto bg-surface-secondary p-4 rounded-xl border border-ink-quaternary">
-             
+
              {/* Slider Control */}
              <div className="flex flex-col gap-2 w-full sm:w-48">
                <div className="flex justify-between text-xs font-bold text-ink-secondary uppercase tracking-wide">
                  <span>Records</span>
                  <span className="text-brand">{genCount.toLocaleString()}</span>
                </div>
-               <input 
-                 type="range" 
-                 min="1000" 
-                 max="10000" 
-                 step="1000" 
-                 value={genCount} 
+               <input
+                 type="range"
+                 min="1000"
+                 max="10000"
+                 step="1000"
+                 value={genCount}
                  onChange={(e) => setGenCount(Number(e.target.value))}
                  className="w-full h-2 bg-surface-tertiary rounded-lg appearance-none cursor-pointer accent-brand"
                />
@@ -100,11 +122,11 @@ const DatasetView: React.FC<DatasetViewProps> = ({ data, onDataUpdate }) => {
              {/* Feature Toggle */}
              <div className="flex flex-col gap-2">
                 <span className="text-xs font-bold text-ink-secondary uppercase tracking-wide">Columns</span>
-                <button 
+                <button
                   onClick={() => setShowAdvancedFeatures(!showAdvancedFeatures)}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
-                    showAdvancedFeatures 
-                      ? 'bg-indigo-50 text-indigo-600 border-indigo-200' 
+                    showAdvancedFeatures
+                      ? 'bg-indigo-50 text-indigo-600 border-indigo-200'
                       : 'bg-white text-ink-secondary border-ink-quaternary hover:border-ink-tertiary'
                   }`}
                 >
@@ -132,6 +154,28 @@ const DatasetView: React.FC<DatasetViewProps> = ({ data, onDataUpdate }) => {
           </div>
         </div>
       </div>
+
+      {/* Quick Stats */}
+      {quickStats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { icon: Users, label: 'Avg Age', value: `${quickStats.avgAge.toFixed(1)} yrs`, color: 'text-brand' },
+            { icon: Activity, label: 'Avg BMI', value: quickStats.avgBmi.toFixed(1), color: 'text-purple-600' },
+            { icon: DollarSign, label: 'Avg Premium', value: `$${quickStats.avgPremium.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, color: 'text-emerald-600' },
+            { icon: AlertTriangle, label: 'High Risk', value: `${quickStats.highRiskPct.toFixed(1)}%`, color: 'text-red-600' },
+          ].map(({ icon: Icon, label, value, color }) => (
+            <div key={label} className="bg-white rounded-2xl border border-ink-quaternary shadow-card p-4 flex items-center gap-3">
+              <div className={`w-9 h-9 rounded-lg bg-surface-secondary flex items-center justify-center ${color} flex-shrink-0`}>
+                <Icon size={16} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-ink-tertiary uppercase tracking-wide truncate">{label}</p>
+                <p className="text-lg font-bold text-ink leading-tight truncate">{value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Main Content Area */}
       {data.length === 0 ? (
@@ -220,7 +264,7 @@ const DatasetView: React.FC<DatasetViewProps> = ({ data, onDataUpdate }) => {
                           {showAdvancedFeatures && <span className="text-[10px] text-ink-tertiary">Body Fat: {row.bodyFat}%</span>}
                       </div>
                     </td>
-                    
+
                     {showAdvancedFeatures && (
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
@@ -261,8 +305,8 @@ const DatasetView: React.FC<DatasetViewProps> = ({ data, onDataUpdate }) => {
                     </td>
                     <td className="px-6 py-4 text-right">
                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                           row.riskCategory === 'High' 
-                           ? 'bg-red-50 text-red-700 border-red-100' 
+                           row.riskCategory === 'High'
+                           ? 'bg-red-50 text-red-700 border-red-100'
                            : 'bg-emerald-50 text-emerald-700 border-emerald-100'
                         }`}>
                         {row.riskCategory.toUpperCase()}
@@ -273,7 +317,7 @@ const DatasetView: React.FC<DatasetViewProps> = ({ data, onDataUpdate }) => {
               </tbody>
             </table>
           </div>
-          
+
           {/* Footer Pagination */}
           <div className="flex justify-between items-center px-6 py-4 border-t border-ink-quaternary bg-surface-secondary">
              <button
@@ -294,6 +338,7 @@ const DatasetView: React.FC<DatasetViewProps> = ({ data, onDataUpdate }) => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

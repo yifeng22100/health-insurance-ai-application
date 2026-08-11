@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import BodyCompositionCalculator from '../components/BodyCompositionCalculator';
 
 const TOPICS = [
   { id: 'premiums', icon: '💰', label: 'How Premiums Work', desc: 'The factors insurers commonly use to price a policy, and why.' },
@@ -167,6 +168,9 @@ function BmiSection() {
         calculate, which is why it's used so widely by insurers and clinicians alike — but it's a population-level
         screening tool, not a precise individual health measure.
       </p>
+
+      <BodyCompositionCalculator />
+
       <div className="space-y-2.5">
         {BMI_RANGES.map(r => (
           <div key={r.label} className="border border-ink-quaternary rounded-xl p-3.5 flex items-center gap-3" style={{ borderLeft: `3px solid ${r.color}` }}>

@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
 import { predictRisk } from '../services/geminiService';
-import { ShieldCheck, AlertTriangle, Activity, Sliders, ChevronRight } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { ShieldCheck, AlertTriangle, Activity, Sliders, ChevronRight, HeartPulse, Wind } from 'lucide-react';
+import RadialGauge from './RadialGauge';
 
 const Prediction: React.FC = () => {
   const [form, setForm] = useState({
@@ -14,16 +14,20 @@ const Prediction: React.FC = () => {
     dailySteps: 5000,
     stressLevel: 5
   });
-  
+
   const [result, setResult] = useState<{ risk: string; confidence: number; reasoning: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
     setForm(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
+  };
+
+  const toggleFlag = (key: 'historyHeartDisease' | 'historyDiabetes') => {
+    setForm(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,12 +38,26 @@ const Prediction: React.FC = () => {
     setLoading(false);
   };
 
-  const getGaugeColor = (risk: string) => risk === 'High' ? '#ef4444' : '#10b981';
+  const gaugeColor = result?.risk === 'High' ? '#ef4444' : '#10b981';
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
+    <div className="min-h-screen bg-white">
+      {/* Page header */}
+      <div className="bg-surface-secondary border-b border-ink-quaternary pt-10 pb-8 px-5">
+        <div className="max-w-[1280px] mx-auto">
+          <p className="text-brand text-[12px] font-semibold uppercase tracking-[0.12em] mb-1">Risk Predictor</p>
+          <h1 className="text-[28px] font-bold text-ink tracking-tight">Classify risk in real time.</h1>
+          <p className="text-ink-secondary text-[14px] mt-2 max-w-[580px]">
+            Adjust a patient profile and get an instant AI-generated High/Low risk classification with a
+            confidence score and plain-language reasoning.
+          </p>
+        </div>
+      </div>
+
+      <div className="max-w-[1280px] mx-auto px-5 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 animate-fade-in">
       {/* Control Panel */}
-      <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-card border border-ink-quaternary h-fit">
+      <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-card border border-ink-quaternary h-fit">
         <div className="flex items-center gap-2 mb-6 pb-4 border-b border-ink-quaternary">
            <div className="p-2 bg-brand-light text-brand rounded-lg">
              <Sliders size={20} />
@@ -65,11 +83,23 @@ const Prediction: React.FC = () => {
           </div>
 
            <div>
-            <label className="block text-xs font-bold text-ink-secondary uppercase mb-1">Smoker Status</label>
-            <select name="smoker" value={form.smoker} onChange={handleChange} className="w-full px-3 py-2 border border-ink-quaternary rounded-lg focus:ring-2 focus:ring-brand focus:border-brand text-sm font-medium text-ink">
-              <option value="No">Non-Smoker</option>
-              <option value="Yes">Smoker</option>
-            </select>
+            <label className="block text-xs font-bold text-ink-secondary uppercase mb-2">Smoker Status</label>
+            <div className="grid grid-cols-2 gap-2">
+              {[{ v: 'No', label: 'Non-Smoker' }, { v: 'Yes', label: 'Smoker' }].map(opt => (
+                <button
+                  type="button"
+                  key={opt.v}
+                  onClick={() => setForm(prev => ({ ...prev, smoker: opt.v }))}
+                  className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+                    form.smoker === opt.v
+                      ? 'bg-brand text-white border-brand'
+                      : 'bg-white text-ink-secondary border-ink-quaternary hover:border-brand hover:text-brand'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>
@@ -79,18 +109,32 @@ const Prediction: React.FC = () => {
             </div>
             <input type="range" min="1" max="10" name="stressLevel" value={form.stressLevel} onChange={handleChange} className="w-full h-2 bg-surface-tertiary rounded-lg appearance-none cursor-pointer accent-brand" />
           </div>
-          
-          <div className="bg-surface-secondary p-4 rounded-lg border border-ink-quaternary">
-             <span className="text-xs font-bold text-ink-secondary uppercase block mb-3">Medical History</span>
-             <div className="space-y-3">
-                 <label className="flex items-center space-x-3 cursor-pointer group">
-                    <input type="checkbox" name="historyHeartDisease" checked={form.historyHeartDisease} onChange={handleChange} className="w-4 h-4 text-brand rounded focus:ring-brand border-ink-tertiary" />
-                    <span className="text-sm text-ink-secondary group-hover:text-ink transition-colors">Heart Disease</span>
-                 </label>
-                 <label className="flex items-center space-x-3 cursor-pointer group">
-                    <input type="checkbox" name="historyDiabetes" checked={form.historyDiabetes} onChange={handleChange} className="w-4 h-4 text-brand rounded focus:ring-brand border-ink-tertiary" />
-                    <span className="text-sm text-ink-secondary group-hover:text-ink transition-colors">Diabetes</span>
-                 </label>
+
+          <div>
+             <span className="block text-xs font-bold text-ink-secondary uppercase mb-2">Medical History</span>
+             <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggleFlag('historyHeartDisease')}
+                  className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-bold border transition-colors ${
+                    form.historyHeartDisease
+                      ? 'bg-red-50 text-red-600 border-red-200'
+                      : 'bg-white text-ink-secondary border-ink-quaternary hover:border-ink-tertiary'
+                  }`}
+                >
+                  <HeartPulse size={14} /> Heart Disease
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleFlag('historyDiabetes')}
+                  className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-bold border transition-colors ${
+                    form.historyDiabetes
+                      ? 'bg-orange-50 text-orange-600 border-orange-200'
+                      : 'bg-white text-ink-secondary border-ink-quaternary hover:border-ink-tertiary'
+                  }`}
+                >
+                  <Wind size={14} /> Diabetes
+                </button>
              </div>
           </div>
 
@@ -109,8 +153,8 @@ const Prediction: React.FC = () => {
       </div>
 
       {/* Result Display */}
-      <div className="lg:col-span-2 space-y-6">
-        <div className={`h-full min-h-[500px] flex flex-col items-center justify-center p-8 rounded-xl border-2 border-dashed transition-all ${result ? 'border-transparent bg-white shadow-sm' : 'border-ink-quaternary bg-surface-secondary'}`}>
+      <div className="lg:col-span-3 space-y-6">
+        <div className={`h-full min-h-[500px] flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed transition-all ${result ? 'border-transparent bg-white shadow-card' : 'border-ink-quaternary bg-surface-secondary'}`}>
           {!result ? (
             <div className="text-center text-ink-tertiary">
               <ShieldCheck size={64} className="mx-auto mb-4 opacity-30" />
@@ -118,65 +162,38 @@ const Prediction: React.FC = () => {
               <p className="max-w-xs mx-auto">Enter patient parameters in the control panel to generate a real-time risk assessment.</p>
             </div>
           ) : (
-            <div className="w-full max-w-2xl text-center animate-fade-in-up">
-              
-              {/* Main Score Card */}
-              <div className="bg-gradient-to-br from-ink to-ink/80 text-white p-8 rounded-2xl shadow-xl mb-8 relative overflow-hidden">
-                  <div className="relative z-10">
-                    <span className="text-xs font-bold tracking-[0.2em] text-ink-tertiary uppercase">Predicted Category</span>
-                    <div className={`mt-4 text-6xl font-black flex items-center justify-center gap-4 ${result.risk === 'High' ? 'text-red-400' : 'text-emerald-400'}`}>
-                    {result.risk === 'High' ? <AlertTriangle size={56} /> : <ShieldCheck size={56} />}
-                    {result.risk}
-                    </div>
-                  </div>
+            <div className="w-full max-w-lg text-center animate-fade-in-up">
+
+              <RadialGauge
+                value={result.confidence}
+                color={gaugeColor}
+                label={result.risk}
+                sublabel={`${result.confidence}% confidence`}
+              />
+
+              <div className={`mt-2 inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold ${
+                result.risk === 'High' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
+              }`}>
+                {result.risk === 'High' ? <AlertTriangle size={16} /> : <ShieldCheck size={16} />}
+                {result.risk} Risk Category
               </div>
 
-              {/* Detail Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 {/* Reasoning */}
-                 <div className="bg-white p-6 rounded-xl border border-ink-quaternary shadow-sm text-left">
-                    <h4 className="text-xs font-bold text-ink-secondary uppercase tracking-wider mb-3">AI Reasoning</h4>
-                    <p className="text-ink font-medium leading-relaxed">
-                        "{result.reasoning}"
-                    </p>
-                 </div>
-
-                 {/* Confidence Gauge */}
-                 <div className="bg-white p-6 rounded-xl border border-ink-quaternary shadow-sm flex flex-col items-center">
-                    <div className="text-xs text-ink-secondary font-bold uppercase tracking-wider mb-2">Model Confidence</div>
-                    <div className="h-32 w-full relative">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={[{ value: result.confidence }, { value: 100 - result.confidence }]}
-                                    cx="50%"
-                                    cy="100%"
-                                    startAngle={180}
-                                    endAngle={0}
-                                    innerRadius="70%"
-                                    outerRadius="100%"
-                                    dataKey="value"
-                                    stroke="none"
-                                >
-                                    <Cell fill={getGaugeColor(result.risk)} />
-                                    <Cell fill="#f1f5f9" />
-                                </Pie>
-                            </PieChart>
-                        </ResponsiveContainer>
-                        <div className="absolute inset-x-0 bottom-0 flex justify-center items-end">
-                            <span className="text-3xl font-black text-ink leading-none">{result.confidence}%</span>
-                        </div>
-                    </div>
-                 </div>
+              <div className="mt-8 bg-surface-secondary p-6 rounded-2xl border border-ink-quaternary text-left">
+                <h4 className="text-xs font-bold text-ink-secondary uppercase tracking-wider mb-3">AI Reasoning</h4>
+                <p className="text-ink font-medium leading-relaxed">
+                    "{result.reasoning}"
+                </p>
               </div>
-              
-              <div className="mt-8 text-xs text-ink-tertiary font-mono">
+
+              <div className="mt-6 text-xs text-ink-tertiary font-mono">
                   Engine: XGB-DeepHybrid-v2.5 &bull; Latency: 124ms
               </div>
 
             </div>
           )}
         </div>
+      </div>
+      </div>
       </div>
     </div>
   );
