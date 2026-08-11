@@ -1,11 +1,35 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { predictPremium } from '../services/geminiService';
-import { DollarSign, TrendingUp, Activity, User, Heart, ChevronRight, Calculator } from 'lucide-react';
+import { DollarSign, TrendingUp, Activity, ChevronRight, Calculator, Zap, Sparkles } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
+interface ForecastForm {
+  age: number;
+  bmi: number;
+  smoker: string;
+  historyHeartDisease: boolean;
+  historyDiabetes: boolean;
+  historyCancer: boolean;
+  coverageAmount: number;
+}
+
+// Instant, non-AI ballpark estimate — mirrors the same heuristic used to generate
+// the synthetic dataset, so it stays consistent with the rest of the workbench.
+function quickEstimate(form: ForecastForm) {
+  let base = 2000;
+  base += form.age * 250;
+  base += (form.bmi - 18) * 150;
+  if (form.smoker === 'Yes') base *= 2.5;
+  if (form.historyHeartDisease) base += 5000;
+  if (form.historyDiabetes) base += 3000;
+  if (form.historyCancer) base += 8000;
+  base += (form.coverageAmount - 100000) * 0.01;
+  return Math.max(0, Math.round(base));
+}
+
 const CostForecast: React.FC = () => {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ForecastForm>({
     age: 40,
     bmi: 28.5,
     smoker: 'No',
@@ -18,12 +42,13 @@ const CostForecast: React.FC = () => {
   const [result, setResult] = useState<{ estimatedPremium: number; rangeLow: number; rangeHigh: number; factors: string[] } | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    setForm(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    }));
+  const handleSlider = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: Number(value) }));
+  };
+
+  const toggleFlag = (key: 'historyHeartDisease' | 'historyDiabetes' | 'historyCancer') => {
+    setForm(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,85 +59,141 @@ const CostForecast: React.FC = () => {
     setLoading(false);
   };
 
+  const estimate = useMemo(() => quickEstimate(form), [form]);
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
+    <div className="min-h-screen bg-white">
+      {/* Page header */}
+      <div className="bg-surface-secondary border-b border-ink-quaternary pt-10 pb-8 px-5">
+        <div className="max-w-[1280px] mx-auto">
+          <p className="text-brand text-[12px] font-semibold uppercase tracking-[0.12em] mb-1">Cost Forecaster</p>
+          <h1 className="text-[28px] font-bold text-ink tracking-tight">Estimate premiums as you adjust.</h1>
+          <p className="text-ink-secondary text-[14px] mt-2 max-w-[580px]">
+            Drag the sliders for an instant local estimate, then request a detailed AI-generated forecast with
+            a confidence range and cost drivers.
+          </p>
+        </div>
+      </div>
+
+      <div className="max-w-[1280px] mx-auto px-5 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 animate-fade-in">
       {/* Control Panel */}
-      <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-card border border-ink-quaternary h-fit">
+      <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-card border border-ink-quaternary h-fit">
         <div className="flex items-center gap-2 mb-6 pb-4 border-b border-ink-quaternary">
              <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
                <Calculator size={20} />
              </div>
              <h3 className="text-xl font-bold text-ink">Parameters</h3>
           </div>
-          
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
-               <div>
-                  <label className="block text-xs font-bold text-ink-secondary uppercase mb-1">Age</label>
-                  <input type="number" name="age" value={form.age} onChange={handleChange} className="w-full px-3 py-2 border border-ink-quaternary rounded-lg focus:ring-2 focus:ring-emerald-500 text-sm font-medium text-ink" />
-               </div>
-               <div>
-                  <label className="block text-xs font-bold text-ink-secondary uppercase mb-1">BMI Score</label>
-                  <input type="number" step="0.1" name="bmi" value={form.bmi} onChange={handleChange} className="w-full px-3 py-2 border border-ink-quaternary rounded-lg focus:ring-2 focus:ring-emerald-500 text-sm font-medium text-ink" />
-               </div>
+
+          <div className="space-y-5">
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-bold text-ink-secondary uppercase">Age</label>
+                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{form.age} yrs</span>
+              </div>
+              <input type="range" min="18" max="80" name="age" value={form.age} onChange={handleSlider} className="w-full h-2 bg-surface-tertiary rounded-lg appearance-none cursor-pointer accent-emerald-600" />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-ink-secondary uppercase mb-1">Smoker Status</label>
-              <select name="smoker" value={form.smoker} onChange={handleChange} className="w-full px-3 py-2 border border-ink-quaternary rounded-lg focus:ring-2 focus:ring-emerald-500 text-sm font-medium text-ink">
-                <option value="No">Non-Smoker</option>
-                <option value="Yes">Smoker</option>
-              </select>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-bold text-ink-secondary uppercase">BMI Score</label>
+                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{form.bmi.toFixed(1)}</span>
+              </div>
+              <input type="range" min="15" max="50" step="0.1" name="bmi" value={form.bmi} onChange={handleSlider} className="w-full h-2 bg-surface-tertiary rounded-lg appearance-none cursor-pointer accent-emerald-600" />
             </div>
-            
-            <div className="bg-surface-secondary p-4 rounded-lg border border-ink-quaternary">
-              <span className="text-xs font-bold text-ink-secondary uppercase block mb-3">Medical History</span>
-              <div className="space-y-3">
-                 <label className="flex items-center space-x-3 cursor-pointer group">
-                    <input type="checkbox" name="historyHeartDisease" checked={form.historyHeartDisease} onChange={handleChange} className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 border-ink-tertiary" />
-                    <span className="text-sm text-ink-secondary group-hover:text-ink transition-colors flex items-center gap-2">Heart Disease</span>
-                </label>
-                <label className="flex items-center space-x-3 cursor-pointer group">
-                    <input type="checkbox" name="historyDiabetes" checked={form.historyDiabetes} onChange={handleChange} className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 border-ink-tertiary" />
-                    <span className="text-sm text-ink-secondary group-hover:text-ink transition-colors flex items-center gap-2">Diabetes</span>
-                </label>
-                 <label className="flex items-center space-x-3 cursor-pointer group">
-                    <input type="checkbox" name="historyCancer" checked={form.historyCancer} onChange={handleChange} className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 border-ink-tertiary" />
-                    <span className="text-sm text-ink-secondary group-hover:text-ink transition-colors flex items-center gap-2">Cancer History</span>
-                </label>
+
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-bold text-ink-secondary uppercase">Coverage Amount</label>
+                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">${form.coverageAmount.toLocaleString()}</span>
+              </div>
+              <input type="range" min="10000" max="1000000" step="10000" name="coverageAmount" value={form.coverageAmount} onChange={handleSlider} className="w-full h-2 bg-surface-tertiary rounded-lg appearance-none cursor-pointer accent-emerald-600" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-ink-secondary uppercase mb-2">Smoker Status</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[{ v: 'No', label: 'Non-Smoker' }, { v: 'Yes', label: 'Smoker' }].map(opt => (
+                  <button
+                    type="button"
+                    key={opt.v}
+                    onClick={() => setForm(prev => ({ ...prev, smoker: opt.v }))}
+                    className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+                      form.smoker === opt.v
+                        ? 'bg-emerald-600 text-white border-emerald-600'
+                        : 'bg-white text-ink-secondary border-ink-quaternary hover:border-emerald-500 hover:text-emerald-600'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </div>
 
+            <div>
+              <span className="block text-xs font-bold text-ink-secondary uppercase mb-2">Medical History</span>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { key: 'historyHeartDisease' as const, label: 'Heart' },
+                  { key: 'historyDiabetes' as const, label: 'Diabetes' },
+                  { key: 'historyCancer' as const, label: 'Cancer' },
+                ].map(({ key, label }) => (
+                  <button
+                    type="button"
+                    key={key}
+                    onClick={() => toggleFlag(key)}
+                    className={`px-2 py-2.5 rounded-lg text-xs font-bold border transition-colors ${
+                      form[key]
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : 'bg-white text-ink-secondary border-ink-quaternary hover:border-ink-tertiary'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Live local estimate */}
+            <div className="bg-surface-secondary rounded-xl border border-ink-quaternary p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Zap size={16} className="text-amber-500" />
+                <span className="text-xs font-bold text-ink-secondary uppercase tracking-wide">Quick Estimate</span>
+              </div>
+              <span className="text-lg font-black text-ink">${estimate.toLocaleString()}</span>
+            </div>
+
             <button
-              type="submit"
+              onClick={handleSubmit}
               disabled={loading}
-              className="w-full mt-4 bg-emerald-600 text-white py-3 rounded-lg font-bold hover:bg-emerald-700 transition-all disabled:opacity-70 flex justify-center items-center gap-2 shadow-lg shadow-emerald-200"
+              className="w-full mt-1 bg-emerald-600 text-white py-3 rounded-lg font-bold hover:bg-emerald-700 transition-all disabled:opacity-70 flex justify-center items-center gap-2 shadow-lg shadow-emerald-200"
             >
               {loading ? <Activity className="animate-spin" size={18} /> : (
                  <>
-                 Calculate Premium <ChevronRight size={16} />
+                 <Sparkles size={16} /> Get AI Forecast <ChevronRight size={16} />
                  </>
               )}
             </button>
-          </form>
+          </div>
       </div>
 
       {/* Results */}
-      <div className="lg:col-span-2 space-y-6">
-         <div className={`h-full min-h-[500px] flex flex-col items-center justify-center p-8 rounded-xl border-2 border-dashed transition-all ${result ? 'border-transparent bg-white shadow-sm' : 'border-ink-quaternary bg-surface-secondary'}`}>
+      <div className="lg:col-span-3 space-y-6">
+         <div className={`h-full min-h-[500px] flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed transition-all ${result ? 'border-transparent bg-white shadow-card' : 'border-ink-quaternary bg-surface-secondary'}`}>
          {!result ? (
            <div className="text-center text-ink-tertiary">
               <DollarSign size={64} className="mb-4 opacity-30 mx-auto" />
               <h3 className="text-xl font-bold text-ink-secondary mb-2">Cost Forecasting Engine</h3>
-              <p className="max-w-xs mx-auto">Enter patient parameters to perform an actuarial regression analysis for premium estimation.</p>
+              <p className="max-w-xs mx-auto">The Quick Estimate updates instantly on the left. Request an AI forecast for a detailed breakdown with cost drivers and a 5-year projection.</p>
            </div>
          ) : (
            <div className="w-full max-w-2xl text-center animate-fade-in-up">
-              
+
               {/* Main Score Card */}
               <div className="bg-gradient-to-br from-ink to-ink/80 text-white p-8 rounded-2xl shadow-xl mb-8 relative overflow-hidden">
                  <div className="relative z-10 text-center">
-                    <p className="text-emerald-300 font-bold uppercase tracking-[0.2em] text-xs mb-4">Estimated Annual Premium</p>
+                    <p className="text-emerald-300 font-bold uppercase tracking-[0.2em] text-xs mb-4">AI-Estimated Annual Premium</p>
                     <h2 className="text-6xl font-black mb-2 tracking-tight">${result.estimatedPremium.toLocaleString()}</h2>
                     <p className="text-ink-tertiary font-medium">Confidence Interval: ${result.rangeLow.toLocaleString()} - ${result.rangeHigh.toLocaleString()}</p>
                  </div>
@@ -134,7 +215,7 @@ const CostForecast: React.FC = () => {
                       ))}
                     </ul>
                  </div>
-                 
+
                  <div className="bg-white p-6 rounded-2xl shadow-card border border-ink-quaternary flex flex-col">
                     <h4 className="text-xs font-bold text-ink-secondary uppercase tracking-wider mb-4 text-left">5-Year Cost Projection</h4>
                     <div className="flex-1 min-h-[150px]">
@@ -165,6 +246,8 @@ const CostForecast: React.FC = () => {
            </div>
          )}
          </div>
+      </div>
+      </div>
       </div>
     </div>
   );

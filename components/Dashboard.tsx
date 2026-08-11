@@ -252,27 +252,39 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
   }, [data]);
 
 
-  if (data.length === 0) return (
-    <div className="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border-2 border-dashed border-ink-quaternary">
-      <div className="bg-surface-secondary p-6 rounded-full mb-4">
-        <LayoutDashboard className="text-ink-tertiary" size={48} />
+  const header = (
+    <div className="bg-surface-secondary border-b border-ink-quaternary pt-10 pb-8 px-5">
+      <div className="max-w-[1280px] mx-auto">
+        <p className="text-brand text-[12px] font-semibold uppercase tracking-[0.12em] mb-1">Visual Insights</p>
+        <h1 className="text-[28px] font-bold text-ink tracking-tight">Portfolio &amp; risk analytics.</h1>
+        <p className="text-ink-secondary text-[14px] mt-2 max-w-[580px]">
+          Portfolio health, risk distribution, and actuarial analysis across the current synthetic dataset.
+        </p>
       </div>
-      <h3 className="text-lg font-bold text-ink">No Data to Visualize</h3>
-      <p className="text-ink-secondary max-w-md text-center mt-2">
-        Please generate or load a dataset to view analytics and insights.
-      </p>
+    </div>
+  );
+
+  if (data.length === 0) return (
+    <div className="min-h-screen bg-white">
+      {header}
+      <div className="max-w-[1280px] mx-auto px-5 py-8">
+        <div className="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border-2 border-dashed border-ink-quaternary">
+          <div className="bg-surface-secondary p-6 rounded-full mb-4">
+            <LayoutDashboard className="text-ink-tertiary" size={48} />
+          </div>
+          <h3 className="text-lg font-bold text-ink">No Data to Visualize</h3>
+          <p className="text-ink-secondary max-w-md text-center mt-2">
+            Please generate or load a dataset to view analytics and insights.
+          </p>
+        </div>
+      </div>
     </div>
   );
 
   return (
-    <div className="space-y-6 animate-fade-in pb-10">
-
-      {/* Header */}
-      <div className="mb-2">
-        <p className="text-brand text-[12px] font-semibold uppercase tracking-[0.12em] mb-1">Visual Insights</p>
-        <h2 className="text-[28px] font-bold text-ink tracking-tight">Portfolio &amp; risk analytics.</h2>
-        <p className="text-ink-secondary text-[14px] mt-1">Portfolio health, risk distribution, and actuarial analysis.</p>
-      </div>
+    <div className="min-h-screen bg-white">
+      {header}
+      <div className="max-w-[1280px] mx-auto px-5 py-8 space-y-6 animate-fade-in pb-10">
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -403,6 +415,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
              </ResponsiveContainer>
            </div>
         </div>
+      </div>
       </div>
     </div>
   );
