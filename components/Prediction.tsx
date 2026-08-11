@@ -39,34 +39,34 @@ const Prediction: React.FC = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
       {/* Control Panel */}
-      <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
-        <div className="flex items-center gap-2 mb-6 pb-4 border-b border-slate-100">
-           <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+      <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-card border border-ink-quaternary h-fit">
+        <div className="flex items-center gap-2 mb-6 pb-4 border-b border-ink-quaternary">
+           <div className="p-2 bg-brand-light text-brand rounded-lg">
              <Sliders size={20} />
            </div>
-           <h3 className="text-xl font-bold text-slate-800">Parameters</h3>
+           <h3 className="text-xl font-bold text-ink">Parameters</h3>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-2 gap-4">
              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Age</label>
-                <input type="number" name="age" value={form.age} onChange={handleChange} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium text-slate-700" />
+                <label className="block text-xs font-bold text-ink-secondary uppercase mb-1">Age</label>
+                <input type="number" name="age" value={form.age} onChange={handleChange} className="w-full px-3 py-2 border border-ink-quaternary rounded-lg focus:ring-2 focus:ring-brand focus:border-brand text-sm font-medium text-ink" />
              </div>
              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">BMI Score</label>
-                <input type="number" step="0.1" name="bmi" value={form.bmi} onChange={handleChange} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium text-slate-700" />
+                <label className="block text-xs font-bold text-ink-secondary uppercase mb-1">BMI Score</label>
+                <input type="number" step="0.1" name="bmi" value={form.bmi} onChange={handleChange} className="w-full px-3 py-2 border border-ink-quaternary rounded-lg focus:ring-2 focus:ring-brand focus:border-brand text-sm font-medium text-ink" />
              </div>
           </div>
 
           <div>
-             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Daily Steps</label>
-             <input type="number" name="dailySteps" value={form.dailySteps} onChange={handleChange} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium text-slate-700" />
+             <label className="block text-xs font-bold text-ink-secondary uppercase mb-1">Daily Steps</label>
+             <input type="number" name="dailySteps" value={form.dailySteps} onChange={handleChange} className="w-full px-3 py-2 border border-ink-quaternary rounded-lg focus:ring-2 focus:ring-brand focus:border-brand text-sm font-medium text-ink" />
           </div>
 
            <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Smoker Status</label>
-            <select name="smoker" value={form.smoker} onChange={handleChange} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium text-slate-700">
+            <label className="block text-xs font-bold text-ink-secondary uppercase mb-1">Smoker Status</label>
+            <select name="smoker" value={form.smoker} onChange={handleChange} className="w-full px-3 py-2 border border-ink-quaternary rounded-lg focus:ring-2 focus:ring-brand focus:border-brand text-sm font-medium text-ink">
               <option value="No">Non-Smoker</option>
               <option value="Yes">Smoker</option>
             </select>
@@ -74,22 +74,22 @@ const Prediction: React.FC = () => {
 
           <div>
             <div className="flex justify-between items-center mb-1">
-                <label className="block text-xs font-bold text-slate-500 uppercase">Stress Level</label>
-                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 rounded">{form.stressLevel}/10</span>
+                <label className="block text-xs font-bold text-ink-secondary uppercase">Stress Level</label>
+                <span className="text-xs font-bold text-brand bg-brand-light px-2 rounded">{form.stressLevel}/10</span>
             </div>
-            <input type="range" min="1" max="10" name="stressLevel" value={form.stressLevel} onChange={handleChange} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600" />
+            <input type="range" min="1" max="10" name="stressLevel" value={form.stressLevel} onChange={handleChange} className="w-full h-2 bg-surface-tertiary rounded-lg appearance-none cursor-pointer accent-brand" />
           </div>
           
-          <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-             <span className="text-xs font-bold text-slate-500 uppercase block mb-3">Medical History</span>
+          <div className="bg-surface-secondary p-4 rounded-lg border border-ink-quaternary">
+             <span className="text-xs font-bold text-ink-secondary uppercase block mb-3">Medical History</span>
              <div className="space-y-3">
                  <label className="flex items-center space-x-3 cursor-pointer group">
-                    <input type="checkbox" name="historyHeartDisease" checked={form.historyHeartDisease} onChange={handleChange} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-slate-300" />
-                    <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Heart Disease</span>
+                    <input type="checkbox" name="historyHeartDisease" checked={form.historyHeartDisease} onChange={handleChange} className="w-4 h-4 text-brand rounded focus:ring-brand border-ink-tertiary" />
+                    <span className="text-sm text-ink-secondary group-hover:text-ink transition-colors">Heart Disease</span>
                  </label>
                  <label className="flex items-center space-x-3 cursor-pointer group">
-                    <input type="checkbox" name="historyDiabetes" checked={form.historyDiabetes} onChange={handleChange} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-slate-300" />
-                    <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Diabetes</span>
+                    <input type="checkbox" name="historyDiabetes" checked={form.historyDiabetes} onChange={handleChange} className="w-4 h-4 text-brand rounded focus:ring-brand border-ink-tertiary" />
+                    <span className="text-sm text-ink-secondary group-hover:text-ink transition-colors">Diabetes</span>
                  </label>
              </div>
           </div>
@@ -97,7 +97,7 @@ const Prediction: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-4 bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition-all disabled:opacity-70 flex justify-center items-center gap-2 shadow-lg shadow-blue-200"
+            className="w-full mt-4 bg-brand text-white py-3 rounded-lg font-bold hover:bg-brand-dark transition-all disabled:opacity-70 flex justify-center items-center gap-2 shadow-lg shadow-brand/30"
           >
             {loading ? <Activity className="animate-spin" size={18} /> : (
                 <>
@@ -110,20 +110,20 @@ const Prediction: React.FC = () => {
 
       {/* Result Display */}
       <div className="lg:col-span-2 space-y-6">
-        <div className={`h-full min-h-[500px] flex flex-col items-center justify-center p-8 rounded-xl border-2 border-dashed transition-all ${result ? 'border-transparent bg-white shadow-sm' : 'border-slate-200 bg-slate-50'}`}>
+        <div className={`h-full min-h-[500px] flex flex-col items-center justify-center p-8 rounded-xl border-2 border-dashed transition-all ${result ? 'border-transparent bg-white shadow-sm' : 'border-ink-quaternary bg-surface-secondary'}`}>
           {!result ? (
-            <div className="text-center text-slate-400">
+            <div className="text-center text-ink-tertiary">
               <ShieldCheck size={64} className="mx-auto mb-4 opacity-30" />
-              <h3 className="text-xl font-bold text-slate-500 mb-2">Risk Classification Engine</h3>
+              <h3 className="text-xl font-bold text-ink-secondary mb-2">Risk Classification Engine</h3>
               <p className="max-w-xs mx-auto">Enter patient parameters in the control panel to generate a real-time risk assessment.</p>
             </div>
           ) : (
             <div className="w-full max-w-2xl text-center animate-fade-in-up">
               
               {/* Main Score Card */}
-              <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-8 rounded-2xl shadow-xl mb-8 relative overflow-hidden">
+              <div className="bg-gradient-to-br from-ink to-ink/80 text-white p-8 rounded-2xl shadow-xl mb-8 relative overflow-hidden">
                   <div className="relative z-10">
-                    <span className="text-xs font-bold tracking-[0.2em] text-slate-400 uppercase">Predicted Category</span>
+                    <span className="text-xs font-bold tracking-[0.2em] text-ink-tertiary uppercase">Predicted Category</span>
                     <div className={`mt-4 text-6xl font-black flex items-center justify-center gap-4 ${result.risk === 'High' ? 'text-red-400' : 'text-emerald-400'}`}>
                     {result.risk === 'High' ? <AlertTriangle size={56} /> : <ShieldCheck size={56} />}
                     {result.risk}
@@ -134,16 +134,16 @@ const Prediction: React.FC = () => {
               {/* Detail Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  {/* Reasoning */}
-                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm text-left">
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">AI Reasoning</h4>
-                    <p className="text-slate-800 font-medium leading-relaxed">
+                 <div className="bg-white p-6 rounded-xl border border-ink-quaternary shadow-sm text-left">
+                    <h4 className="text-xs font-bold text-ink-secondary uppercase tracking-wider mb-3">AI Reasoning</h4>
+                    <p className="text-ink font-medium leading-relaxed">
                         "{result.reasoning}"
                     </p>
                  </div>
 
                  {/* Confidence Gauge */}
-                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
-                    <div className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2">Model Confidence</div>
+                 <div className="bg-white p-6 rounded-xl border border-ink-quaternary shadow-sm flex flex-col items-center">
+                    <div className="text-xs text-ink-secondary font-bold uppercase tracking-wider mb-2">Model Confidence</div>
                     <div className="h-32 w-full relative">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -164,13 +164,13 @@ const Prediction: React.FC = () => {
                             </PieChart>
                         </ResponsiveContainer>
                         <div className="absolute inset-x-0 bottom-0 flex justify-center items-end">
-                            <span className="text-3xl font-black text-slate-800 leading-none">{result.confidence}%</span>
+                            <span className="text-3xl font-black text-ink leading-none">{result.confidence}%</span>
                         </div>
                     </div>
                  </div>
               </div>
               
-              <div className="mt-8 text-xs text-slate-400 font-mono">
+              <div className="mt-8 text-xs text-ink-tertiary font-mono">
                   Engine: XGB-DeepHybrid-v2.5 &bull; Latency: 124ms
               </div>
 

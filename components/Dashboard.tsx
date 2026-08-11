@@ -1,10 +1,10 @@
 
 import React, { useMemo, useEffect, useRef } from 'react';
+import Plotly from 'plotly.js-dist-min';
 import { HealthcareRecord } from '../types';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-  AreaChart, Area, Cell
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Cell
 } from 'recharts';
 import { Box, Layers, Maximize2, LayoutDashboard, TrendingUp, Users, AlertCircle, Cigarette } from 'lucide-react';
 
@@ -27,8 +27,10 @@ const calculateCorrelation = (x: number[], y: number[]) => {
   return denominator === 0 ? 0 : numerator / denominator;
 };
 
+const PLOTLY_FONT = { family: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif', color: '#6e6e73' };
+
 const Dashboard: React.FC<DashboardProps> = ({ data }) => {
-  
+
   // -- Plotly Refs --
   const riskClusterRef = useRef<HTMLDivElement>(null);
   const correlationRef = useRef<HTMLDivElement>(null);
@@ -100,7 +102,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
 
   // 1. 3D Risk Cluster
   useEffect(() => {
-    if (!data.length || !riskClusterRef.current || !(window as any).Plotly) return;
+    if (!data.length || !riskClusterRef.current) return;
 
     const highRisk = data.filter(d => d.riskCategory === 'High');
     const lowRisk = data.filter(d => d.riskCategory === 'Low');
@@ -122,14 +124,14 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
       mode: 'markers',
       type: 'scatter3d',
       name: 'Low Risk',
-      marker: { size: 3, color: '#10b981', opacity: 0.6 }
+      marker: { size: 3, color: '#0071e3', opacity: 0.6 }
     };
 
     const layout = {
       margin: { l: 0, r: 0, b: 0, t: 0 },
       paper_bgcolor: 'rgba(0,0,0,0)',
       plot_bgcolor: 'rgba(0,0,0,0)',
-      font: { family: 'Inter, sans-serif' },
+      font: PLOTLY_FONT,
       scene: {
         xaxis: { title: 'BMI' },
         yaxis: { title: 'Age' },
@@ -138,14 +140,15 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
       legend: { x: 0, y: 1 }
     };
 
-    (window as any).Plotly.newPlot(riskClusterRef.current, [traceHigh, traceLow], layout, {responsive: true, displayModeBar: false});
+    Plotly.newPlot(riskClusterRef.current, [traceHigh, traceLow] as any, layout as any, { responsive: true, displayModeBar: false });
+
+    return () => { if (riskClusterRef.current) Plotly.purge(riskClusterRef.current); };
   }, [data]);
 
   // 2. Correlation Heatmap
   useEffect(() => {
-    if (!data.length || !correlationRef.current || !(window as any).Plotly) return;
+    if (!data.length || !correlationRef.current) return;
 
-    // Added new features to correlation map
     const features = ['age', 'bmi', 'annualPremium', 'hba1c', 'bodyFat', 'systolicBP', 'stressLevel'];
     const featureLabels = ['Age', 'BMI', 'Premium', 'HbA1c', 'Fat %', 'BP', 'Stress'];
     const matrix: number[][] = [];
@@ -167,27 +170,31 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
       type: 'heatmap',
       colorscale: 'RdBu',
       zmin: -1,
-      zmax: 1
+      zmax: 1,
+      texttemplate: '%{z:.2f}',
+      textfont: { size: 11 },
     }];
 
     const layout = {
       autosize: true,
-      margin: { l: 40, r: 10, b: 40, t: 10 },
+      margin: { l: 60, r: 20, b: 60, t: 10 },
       paper_bgcolor: 'rgba(0,0,0,0)',
       plot_bgcolor: 'rgba(0,0,0,0)',
-      font: { size: 10, family: 'Inter, sans-serif' },
+      font: { ...PLOTLY_FONT, size: 11 },
       xaxis: { showgrid: false },
       yaxis: { showgrid: false }
     };
 
-    (window as any).Plotly.newPlot(correlationRef.current, dataPlot, layout, {responsive: true, displayModeBar: false});
+    Plotly.newPlot(correlationRef.current, dataPlot as any, layout as any, { responsive: true, displayModeBar: false });
+
+    return () => { if (correlationRef.current) Plotly.purge(correlationRef.current); };
   }, [data]);
 
   // 3. Sunburst (Hierarchy)
   useEffect(() => {
-    if (!data.length || !sunburstRef.current || !(window as any).Plotly) return;
+    if (!data.length || !sunburstRef.current) return;
 
-    const regions = Array.from(new Set(data.map(d => d.region)));
+    const regions: string[] = Array.from(new Set(data.map(d => d.region)));
 
     const ids = ["root"];
     const plotLabels = ["All"];
@@ -226,9 +233,10 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
       labels: plotLabels,
       parents: plotParents,
       values: plotValues,
-      outsidetextfont: {size: 10, color: "#fff"},
-      leaf: {opacity: 0.4},
-      marker: {line: {width: 2}},
+      outsidetextfont: {size: 11, color: "#1d1d1f"},
+      insidetextfont: {size: 11},
+      leaf: {opacity: 0.6},
+      marker: {line: {width: 2, color: '#ffffff'}, colors: ['#0071e3', '#e8f2fd', '#6e6e73', '#aeaeb2']},
       branchvalues: 'total'
     }];
 
@@ -236,21 +244,21 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
       autosize: true,
       margin: { l: 0, r: 0, b: 0, t: 0 },
       paper_bgcolor: 'rgba(0,0,0,0)',
-      font: { family: 'Inter, sans-serif' }
+      font: PLOTLY_FONT,
     };
 
-    (window as any).Plotly.newPlot(sunburstRef.current, plotData, layout, {responsive: true, displayModeBar: false});
+    Plotly.newPlot(sunburstRef.current, plotData as any, layout as any, { responsive: true, displayModeBar: false });
 
   }, [data]);
 
 
   if (data.length === 0) return (
-    <div className="flex flex-col items-center justify-center py-24 bg-white rounded-xl border-2 border-dashed border-slate-200">
-      <div className="bg-slate-50 p-6 rounded-full mb-4">
-        <LayoutDashboard className="text-slate-300" size={48} />
+    <div className="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border-2 border-dashed border-ink-quaternary">
+      <div className="bg-surface-secondary p-6 rounded-full mb-4">
+        <LayoutDashboard className="text-ink-tertiary" size={48} />
       </div>
-      <h3 className="text-lg font-bold text-slate-700">No Data to Visualize</h3>
-      <p className="text-slate-500 max-w-md text-center mt-2">
+      <h3 className="text-lg font-bold text-ink">No Data to Visualize</h3>
+      <p className="text-ink-secondary max-w-md text-center mt-2">
         Please generate or load a dataset to view analytics and insights.
       </p>
     </div>
@@ -258,121 +266,116 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
 
   return (
     <div className="space-y-6 animate-fade-in pb-10">
-      
+
       {/* Header */}
-      <div className="flex items-center gap-3 mb-2">
-         <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-            <LayoutDashboard size={20}/>
-         </div>
-         <div>
-            <h2 className="text-xl font-bold text-slate-800">Visual Insights</h2>
-            <p className="text-sm text-slate-500">Portfolio health, risk distribution, and actuarial analysis.</p>
-         </div>
+      <div className="mb-2">
+        <p className="text-brand text-[12px] font-semibold uppercase tracking-[0.12em] mb-1">Visual Insights</p>
+        <h2 className="text-[28px] font-bold text-ink tracking-tight">Portfolio &amp; risk analytics.</h2>
+        <p className="text-ink-secondary text-[14px] mt-1">Portfolio health, risk distribution, and actuarial analysis.</p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col relative overflow-hidden group hover:border-blue-200 transition-all">
+        <div className="bg-white p-5 rounded-2xl shadow-card border border-ink-quaternary flex flex-col relative overflow-hidden group hover:shadow-card-hover transition-shadow">
            <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-              <TrendingUp size={64} className="text-blue-600" />
+              <TrendingUp size={64} className="text-brand" />
            </div>
-           <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
-             <div className="w-2 h-2 rounded-full bg-blue-500"></div> Avg Annual Premium
+           <p className="text-ink-secondary text-[11px] font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
+             <span className="inline-block w-2 h-2 rounded-full bg-brand"></span> Avg Annual Premium
            </p>
-           <h3 className="text-3xl font-extrabold text-slate-800 mt-1">${kpis?.avgPremium.toLocaleString(undefined, {maximumFractionDigits: 0})}</h3>
-           <p className="text-xs text-green-600 mt-2 font-medium flex items-center gap-1">
+           <h3 className="text-3xl font-extrabold text-ink mt-1">${kpis?.avgPremium.toLocaleString(undefined, {maximumFractionDigits: 0})}</h3>
+           <p className="text-xs text-emerald-600 mt-2 font-medium flex items-center gap-1">
              <TrendingUp size={12}/> +4.5% vs Last Year
            </p>
         </div>
 
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col relative overflow-hidden group hover:border-emerald-200 transition-all">
+        <div className="bg-white p-5 rounded-2xl shadow-card border border-ink-quaternary flex flex-col relative overflow-hidden group hover:shadow-card-hover transition-shadow">
            <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
               <Users size={64} className="text-emerald-600" />
            </div>
-           <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500"></div> Total Value
+           <p className="text-ink-secondary text-[11px] font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span> Total Portfolio Value
            </p>
-           <h3 className="text-3xl font-extrabold text-slate-800 mt-1">${(kpis?.totalRevenue || 0 / 1000000).toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
-           <p className="text-xs text-slate-400 mt-2 font-medium">Across {data.length.toLocaleString()} lives</p>
+           <h3 className="text-3xl font-extrabold text-ink mt-1">${(kpis?.totalRevenue ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+           <p className="text-xs text-ink-tertiary mt-2 font-medium">Across {data.length.toLocaleString()} lives</p>
         </div>
 
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col relative overflow-hidden group hover:border-red-200 transition-all">
+        <div className="bg-white p-5 rounded-2xl shadow-card border border-ink-quaternary flex flex-col relative overflow-hidden group hover:shadow-card-hover transition-shadow">
            <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
               <AlertCircle size={64} className="text-red-600" />
            </div>
-           <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-red-500"></div> High Risk Ratio
+           <p className="text-ink-secondary text-[11px] font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
+              <span className="inline-block w-2 h-2 rounded-full bg-red-500"></span> High Risk Ratio
            </p>
-           <h3 className="text-3xl font-extrabold text-slate-800 mt-1">{kpis?.highRiskRate.toFixed(1)}%</h3>
+           <h3 className="text-3xl font-extrabold text-ink mt-1">{kpis?.highRiskRate.toFixed(1)}%</h3>
            <p className="text-xs text-red-500 mt-2 font-medium">Requires immediate attention</p>
         </div>
 
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col relative overflow-hidden group hover:border-orange-200 transition-all">
+        <div className="bg-white p-5 rounded-2xl shadow-card border border-ink-quaternary flex flex-col relative overflow-hidden group hover:shadow-card-hover transition-shadow">
            <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
               <Cigarette size={64} className="text-orange-600" />
            </div>
-           <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-orange-500"></div> Smoker %
+           <p className="text-ink-secondary text-[11px] font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
+              <span className="inline-block w-2 h-2 rounded-full bg-orange-500"></span> Smoker %
            </p>
-           <h3 className="text-3xl font-extrabold text-slate-800 mt-1">{kpis?.smokerRate.toFixed(1)}%</h3>
-           <p className="text-xs text-slate-400 mt-2 font-medium">Of total population</p>
+           <h3 className="text-3xl font-extrabold text-ink mt-1">{kpis?.smokerRate.toFixed(1)}%</h3>
+           <p className="text-xs text-ink-tertiary mt-2 font-medium">Of total population</p>
         </div>
       </div>
 
-      {/* Advanced Analytics Section (Plotly) */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-         <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+      {/* 3D Risk Landscape */}
+      <div className="bg-white p-6 rounded-2xl shadow-card border border-ink-quaternary">
+         <div className="flex items-center justify-between mb-6 pb-4 border-b border-ink-quaternary flex-wrap gap-3">
              <div className="flex items-center gap-2">
-                <Box className="text-indigo-600" size={20} />
-                <h3 className="text-lg font-bold text-slate-800">3D Risk Landscape</h3>
+                <Box className="text-brand" size={20} />
+                <h3 className="text-lg font-bold text-ink">3D Risk Landscape</h3>
              </div>
-             <div className="flex gap-2 text-xs font-medium text-slate-500">
+             <div className="flex gap-3 text-xs font-medium text-ink-secondary">
                 <span className="flex items-center gap-1"><div className="w-2 h-2 bg-red-500 rounded-full"></div> High Risk</span>
-                <span className="flex items-center gap-1"><div className="w-2 h-2 bg-emerald-500 rounded-full"></div> Low Risk</span>
+                <span className="flex items-center gap-1"><div className="w-2 h-2 bg-brand rounded-full"></div> Low Risk</span>
              </div>
          </div>
-         
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* 3D Cluster - Main Focus */}
-            <div className="lg:col-span-2 h-[450px] bg-slate-50 rounded-xl border border-slate-200 relative overflow-hidden shadow-inner">
-               <div ref={riskClusterRef} className="w-full h-full" />
-               <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-2 rounded-lg text-xs font-mono text-slate-600 border border-slate-200 shadow-sm pointer-events-none">
-                  X: BMI &bull; Y: Age &bull; Z: Premium
-               </div>
-            </div>
 
-            {/* Smaller Charts Column - Constrained Height to Match Main Chart */}
-            <div className="lg:col-span-1 h-[450px] flex flex-col gap-4">
-                <div className="flex-1 bg-white rounded-xl border border-slate-200 p-4 flex flex-col shadow-sm overflow-hidden min-h-0">
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2 shrink-0">
-                        <Maximize2 size={14} /> Correlation Matrix
-                    </h4>
-                    <div ref={correlationRef} className="flex-1 w-full min-h-0" />
-                </div>
-                 <div className="flex-1 bg-white rounded-xl border border-slate-200 p-4 flex flex-col shadow-sm overflow-hidden min-h-0">
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2 shrink-0">
-                        <Layers size={14} /> Portfolio Hierarchy
-                    </h4>
-                    <div ref={sunburstRef} className="flex-1 w-full min-h-0" />
-                </div>
+         <div className="h-[460px] bg-surface-secondary rounded-2xl border border-ink-quaternary relative overflow-hidden">
+            <div ref={riskClusterRef} className="w-full h-full" />
+            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-2 rounded-lg text-xs font-mono text-ink-secondary border border-ink-quaternary shadow-sm pointer-events-none">
+               X: BMI &bull; Y: Age &bull; Z: Premium
             </div>
          </div>
+      </div>
+
+      {/* Correlation + Hierarchy — each given full, legible space */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-2xl border border-ink-quaternary shadow-card p-6 flex flex-col">
+            <h4 className="text-sm font-bold text-ink uppercase tracking-wide mb-1 flex items-center gap-2">
+                <Maximize2 size={15} className="text-brand" /> Correlation Matrix
+            </h4>
+            <p className="text-ink-tertiary text-[12px] mb-4">How strongly each metric moves with the others (-1 to 1).</p>
+            <div ref={correlationRef} className="w-full h-[380px]" />
+        </div>
+        <div className="bg-white rounded-2xl border border-ink-quaternary shadow-card p-6 flex flex-col">
+            <h4 className="text-sm font-bold text-ink uppercase tracking-wide mb-1 flex items-center gap-2">
+                <Layers size={15} className="text-brand" /> Portfolio Hierarchy
+            </h4>
+            <p className="text-ink-tertiary text-[12px] mb-4">Premium value by region → smoker status → risk category.</p>
+            <div ref={sunburstRef} className="w-full h-[380px]" />
+        </div>
       </div>
 
       {/* Standard Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Radar: Risk Profiles */}
-        <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-          <h3 className="text-lg font-bold text-slate-800 mb-1">Risk Profile Comparison</h3>
-          <p className="text-xs text-slate-500 mb-6">Normalized feature average (High vs Low)</p>
+        <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-card border border-ink-quaternary flex flex-col">
+          <h3 className="text-lg font-bold text-ink mb-1">Risk Profile Comparison</h3>
+          <p className="text-xs text-ink-tertiary mb-6">Normalized feature average (High vs Low)</p>
           <div className="flex-1 min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart outerRadius={90} data={radarData}>
-                <PolarGrid stroke="#e2e8f0" />
-                <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 11, fontWeight: 500 }} />
+                <PolarGrid stroke="#e8e8ed" />
+                <PolarAngleAxis dataKey="subject" tick={{ fill: '#6e6e73', fontSize: 11, fontWeight: 500 }} />
                 <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                 <Radar name="High Risk" dataKey="HighRisk" stroke="#ef4444" fill="#ef4444" fillOpacity={0.3} />
-                <Radar name="Low Risk" dataKey="LowRisk" stroke="#10b981" fill="#10b981" fillOpacity={0.3} />
+                <Radar name="Low Risk" dataKey="LowRisk" stroke="#0071e3" fill="#0071e3" fillOpacity={0.3} />
                 <Legend iconType="circle" wrapperStyle={{fontSize: '12px', marginTop: '10px'}}/>
                 <Tooltip />
               </RadarChart>
@@ -381,19 +384,19 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
         </div>
 
         {/* Bar: Medical History Impact */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-           <h3 className="text-lg font-bold text-slate-800 mb-1">Condition Cost Impact</h3>
-           <p className="text-xs text-slate-500 mb-6">Average premium increase by medical condition</p>
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-card border border-ink-quaternary flex flex-col">
+           <h3 className="text-lg font-bold text-ink mb-1">Condition Cost Impact</h3>
+           <p className="text-xs text-ink-tertiary mb-6">Average premium increase by medical condition</p>
            <div className="flex-1 min-h-[300px]">
              <ResponsiveContainer width="100%" height="100%">
                <BarChart data={medicalHistoryImpact} layout="vertical" margin={{ left: 40, right: 40 }}>
-                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f5f5f7" />
                  <XAxis type="number" unit="$" tick={{fontSize: 12}} />
-                 <YAxis dataKey="name" type="category" width={100} tick={{fontWeight: 500, fontSize: 13, fill: '#475569'}} />
-                 <Tooltip formatter={(val: number) => `$${val.toLocaleString()}`} cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                 <Bar dataKey="avgCost" name="Avg Annual Premium" fill="url(#colorCost)" radius={[0, 4, 4, 0]} barSize={24}>
+                 <YAxis dataKey="name" type="category" width={100} tick={{fontWeight: 500, fontSize: 13, fill: '#1d1d1f'}} />
+                 <Tooltip formatter={(val: number) => `$${val.toLocaleString()}`} cursor={{fill: '#f5f5f7'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                 <Bar dataKey="avgCost" name="Avg Annual Premium" radius={[0, 4, 4, 0]} barSize={24}>
                     {medicalHistoryImpact.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={['#ef4444', '#f97316', '#eab308', '#3b82f6'][index % 4]} />
+                      <Cell key={`cell-${index}`} fill={['#ef4444', '#f97316', '#eab308', '#0071e3'][index % 4]} />
                     ))}
                  </Bar>
                </BarChart>

@@ -1,12 +1,29 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# 🛡️ HealthInsureAI
 
-# Health Insurance AI Application
+**AI-powered underwriting intelligence** — a data science workbench for exploring how machine learning and
+generative AI can support health insurance underwriting. Generate a synthetic patient portfolio, benchmark
+ML/DL models against it, and get AI-generated risk classifications, premium forecasts, and underwriting
+reports via the Gemini API.
 
-A Data Science workbench that generates a 1000-record synthetic dataset with 25+ statistical features for healthcare insurance risk prediction, with AI-powered model comparison, feature selection, risk/premium prediction, and executive report generation via the Gemini API.
+Part of the same toolkit as [Healthcare Intelligence](https://yifeng22100.github.io/hospital-intelligence-my/#/),
+a companion project for hospital discovery and health knowledge.
 
-## Run Locally
+## What's inside
+
+| Page | What it does |
+|---|---|
+| **Dataset Explorer** | Generates a synthetic portfolio (1k–10k records, 25+ statistical features) and lets you browse, search, and filter it. |
+| **Visual Insights** | Portfolio KPIs, a 3D risk-cluster plot, a feature correlation matrix, a premium hierarchy sunburst, and condition cost impact. |
+| **AutoML Lab** | Benchmarks 8 ML/DL algorithms against the dataset and surfaces the most predictive features, via Gemini. |
+| **Risk Predictor** | Real-time High/Low risk classification with AI-generated reasoning for a single patient profile. |
+| **Cost Forecaster** | Actuarial premium estimation with a 5-year cost projection. |
+| **Report Generator** | Combines risk + cost analysis into a print-ready underwriting report. |
+| **Health Tips** | Original guides on how premiums are priced, what BMI/lab values mean, and how to read the AI outputs above. |
+
+All AI features are clearly labelled as AI-generated estimates on synthetic data — see the **About** page in
+the app for the full disclaimer.
+
+## Run locally
 
 **Prerequisites:** Node.js 20+
 
@@ -44,3 +61,9 @@ To enable it:
 Because this is a client-side-only app, the `GEMINI_API_KEY` ends up bundled into the built JavaScript that ships to the browser. Don't deploy this app publicly with a key that has billing enabled unless you're comfortable with that exposure — for a production deployment, proxy Gemini API calls through a backend instead.
 
 Alternatively, you can deploy the contents of `dist/` (after running `npm run build`) to any static host, such as Vercel, Netlify, or Cloudflare Pages.
+
+## Stack
+
+React 19 + TypeScript + Vite, Tailwind CSS, Recharts + Plotly for visualization, React Router (hash-based, so
+it works on static hosts like GitHub Pages without server rewrites), and the Gemini API for every AI-generated
+feature.

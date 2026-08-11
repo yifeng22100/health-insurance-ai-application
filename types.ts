@@ -39,15 +39,6 @@ export interface HealthcareRecord {
   riskCategory: 'Low' | 'High';
 }
 
-export enum AppTab {
-  DATASET = 'DATASET',
-  DASHBOARD = 'DASHBOARD',
-  MODELS = 'MODELS',
-  PREDICTION = 'PREDICTION', 
-  COST_FORECAST = 'COST_FORECAST',
-  REPORT = 'REPORT', 
-}
-
 export interface ModelMetric {
   name: string;
   type: 'ML' | 'DL';
